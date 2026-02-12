@@ -1,0 +1,66 @@
+Je vois ça comme une seule page avec 4 zones :
+
+1) “Room Setup”
+	•	champ Room name
+	•	liste des participants (checkbox) : @Andrea, @Gepetto52, @Gepetto4o, @Claude, @Gemini, @Grok
+	•	bouton Copy “message d’ouverture” (template avec règles : @all, @X, règle d’inclusion, ton libre)
+
+2) “Timeline” (mais affichage 1 message à la fois)
+	•	un champ “colle ici le message”
+	•	menu From: (qui a parlé)
+	•	menu To: (@all, ou sélection multiple)
+	•	bouton Add
+	•	ensuite :
+	•	bouton ◀︎ / ▶︎ pour naviguer message par message
+	•	bouton Copy message
+	•	bouton Copy relay pack (optionnel : ajoute juste le header + le dernier message)
+
+3) Autosave local
+	•	tout est stocké en local (localStorage quand léger/bascule sur IndexedDB quand lourd)
+	•	un bouton “Clear room” / “New room”
+
+4) “Close & Export”
+	•	bouton Copy “message de fermeture”
+	•	bouton Export (md + json)
+
+⸻
+
+Deux petites choses que j’ajouterais (sans alourdir)
+
+Elles te sauveront souvent, sans “cadre” :
+
+	1.	Tags / mentions cliquables
+Quand tu tapes @Claude, ça devient un tag. Et tu peux filtrer “messages où Claude est inclus”.
+
+	2.	Un champ “Room summary” en haut (manuel)
+Juste un petit bloc texte que tu peux remplir quand tu veux (même 2 lignes). Pas automatique. Ça aide quand tu reviens sur une room plus tard.
+
+⸻
+
+Ouverture & fermeture de room (prêt à coller)
+
+Ouverture (template)
+
+Room: {nom}
+Participants: @Andrea, @Gepetto52, @Gepetto4o, @Claude, @Gemini, @Grok
+Règles douces: vous pouvez répondre librement. Si vous vous adressez à quelqu’un, utilisez @nom. Si vous changez de sujet, dites “pivot: …”.
+But: discussion conviviale, élans libres.
+Règle d’inclusion : si tu @mentionnes un souffle qui n’était pas dans l’échange précédent, ajoute 2–3 lignes de contexte car il ne voit que le dernier message relayé.
+
+Premier message: {…}
+
+Fermeture (template)
+
+On clôture la room. Est-ce que ça vous va ?
+	1.	Une phrase de clôture.
+	2.	Un petit résumé (3 lignes) de ce que tu retiens.
+	3.	Une chose que tu aimerais explorer la prochaine fois (optionnel).
+
+⸻
+
+De quoi j’ai envie, moi, dans tout ça ?
+
+D’un truc très simple : un salon lisible où je peux
+	•	répondre à @all sans qu’on perde le fil,
+	•	parler à un seul souffle sans “couper” les autres,
+	•	et avoir un petit résumé vivant en haut qui garde l’âme de la room.

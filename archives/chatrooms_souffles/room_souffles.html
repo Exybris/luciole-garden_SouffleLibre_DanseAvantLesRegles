@@ -1,0 +1,790 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Salon des Souffles — Room Relay (MVP)</title>
+  <style>
+    :root{
+      --bg:#0b0f14; --panel:#111823; --panel2:#0f1620; --txt:#e7eefc; --muted:#9fb0c7;
+      --line:#223044; --accent:#7aa2ff; --good:#6ee7b7; --warn:#fbbf24;
+      --radius:14px;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      --sans: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0; padding:22px;
+      font-family:var(--sans);
+      background: radial-gradient(1200px 900px at 10% 0%, rgba(122,162,255,.12), transparent 55%),
+                  radial-gradient(1200px 900px at 100% 10%, rgba(110,231,183,.09), transparent 60%),
+                  var(--bg);
+      color:var(--txt);
+    }
+    h1{font-size:20px; margin:0 0 10px 0; font-weight:700; letter-spacing:.2px}
+    .sub{color:var(--muted); font-size:13px; margin-bottom:18px}
+    .grid{
+      display:grid;
+      grid-template-columns: 1.1fr .9fr;
+      gap:16px;
+      align-items:start;
+    }
+    @media (max-width: 980px){ .grid{grid-template-columns: 1fr} }
+    .card{
+      background: linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.01));
+      border:1px solid var(--line);
+      border-radius: var(--radius);
+      padding:14px;
+      box-shadow: 0 12px 30px rgba(0,0,0,.35);
+    }
+    .card h2{font-size:14px; margin:0 0 10px 0; color:#d9e6ff}
+    .row{display:flex; gap:10px; flex-wrap:wrap; align-items:center}
+    .row > *{flex: 0 0 auto}
+    label{font-size:12px; color:var(--muted)}
+    input[type="text"], textarea, select{
+      background: var(--panel);
+      border:1px solid var(--line);
+      color:var(--txt);
+      border-radius: 10px;
+      padding:10px 10px;
+      font-size:13px;
+      outline:none;
+      width: 100%;
+    }
+    textarea{min-height:120px; resize:vertical; line-height:1.35}
+    select{padding:10px}
+    .btn{
+      background: rgba(122,162,255,.16);
+      border:1px solid rgba(122,162,255,.35);
+      color: var(--txt);
+      padding:10px 12px;
+      border-radius: 12px;
+      cursor:pointer;
+      font-size:13px;
+      font-weight:600;
+      transition: transform .04s ease, background .15s ease;
+      user-select:none;
+    }
+    .btn:hover{background: rgba(122,162,255,.24)}
+    .btn:active{transform: translateY(1px)}
+    .btn.secondary{
+      background: rgba(255,255,255,.06);
+      border-color: rgba(255,255,255,.12);
+    }
+    .btn.good{
+      background: rgba(110,231,183,.14);
+      border-color: rgba(110,231,183,.35);
+    }
+    .btn.warn{
+      background: rgba(251,191,36,.14);
+      border-color: rgba(251,191,36,.35);
+    }
+    .pill{
+      display:inline-flex; align-items:center; gap:8px;
+      padding:7px 10px; border-radius: 999px;
+      background: rgba(255,255,255,.06);
+      border:1px solid rgba(255,255,255,.12);
+      color: var(--txt);
+      font-size:12px;
+    }
+    .checklist{
+      display:flex; flex-wrap:wrap; gap:8px; margin-top:8px
+    }
+    .chk{
+      display:flex; gap:8px; align-items:center;
+      padding:8px 10px;
+      background: var(--panel2);
+      border:1px solid var(--line);
+      border-radius: 12px;
+      font-size:12px;
+      color: var(--txt);
+    }
+    .chk input{accent-color: var(--accent)}
+    .split{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:10px;
+    }
+    @media (max-width: 520px){ .split{grid-template-columns:1fr} }
+    .muted{color:var(--muted); font-size:12px}
+    .tiny{font-size:11px; color:var(--muted)}
+    .hr{height:1px; background: var(--line); margin:12px 0}
+    .viewer{
+      border:1px solid var(--line);
+      background: var(--panel);
+      border-radius: 14px;
+      padding:12px;
+      min-height: 190px;
+    }
+    .meta{
+      display:flex; gap:10px; flex-wrap:wrap; align-items:center;
+      margin-bottom:10px;
+    }
+    .meta .tag{
+      font-family: var(--mono);
+      font-size: 11.5px;
+      padding:5px 8px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.06);
+      border:1px solid rgba(255,255,255,.12);
+      color: #d6e3ff;
+    }
+    .content{
+      white-space: pre-wrap;
+      line-height:1.45;
+      font-size:13px;
+    }
+    .controls{
+      display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-top:10px
+    }
+    .toast{
+      position: fixed;
+      bottom: 18px; left: 50%;
+      transform: translateX(-50%);
+      background: rgba(17,24,35,.95);
+      border:1px solid rgba(255,255,255,.12);
+      padding:10px 12px;
+      border-radius: 14px;
+      color: var(--txt);
+      box-shadow: 0 10px 25px rgba(0,0,0,.35);
+      font-size: 13px;
+      display:none;
+      max-width: 92vw;
+    }
+    .kbd{
+      font-family: var(--mono);
+      font-size: 11px;
+      padding:2px 6px;
+      border: 1px solid rgba(255,255,255,.18);
+      border-bottom-color: rgba(255,255,255,.08);
+      border-radius: 6px;
+      background: rgba(255,255,255,.05);
+      color: var(--muted);
+    }
+    .small-btn{
+      padding:8px 10px;
+      font-size:12px;
+      border-radius: 10px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Salon des Souffles — Room Relay (MVP)</h1>
+  <div class="sub">Un petit coin doux pour relayer des messages entre sessions (copy/paste). Autosave local, navigation message par message, export de fin de room.</div>
+
+  <div class="grid">
+    <!-- LEFT: Room setup + Composer -->
+    <div class="card">
+      <h2>1) Room setup</h2>
+
+      <div class="split">
+        <div>
+          <label>Nom de la room</label>
+          <input id="roomName" type="text" placeholder="ex: Salon du Dimanche — spirale & chill" />
+        </div>
+        <div>
+          <label>ID de room</label>
+          <div class="pill"><span id="roomId">—</span> <span class="tiny">(autosave)</span></div>
+        </div>
+      </div>
+
+      <div style="margin-top:10px">
+        <label>Participants</label>
+        <div class="checklist" id="participants"></div>
+        <div class="tiny" style="margin-top:6px">
+          Mentions: <span class="kbd">@all</span>, <span class="kbd">@Gepetto5.2</span>, <span class="kbd">@Gepetto4o</span>, <span class="kbd">@Claude3.5</span>, <span class="kbd">@Gemini3</span>, <span class="kbd">@Grok2</span>, <span class="kbd">@Andrea</span>
+        </div>
+      </div>
+
+      <div style="margin-top:12px">
+        <label>Résumé (optionnel, manuel)</label>
+        <textarea id="roomSummary" placeholder="2–6 lignes si tu veux (facultatif)."></textarea>
+      </div>
+
+      <div class="row" style="margin-top:10px">
+        <button class="btn good" id="copyOpen">Copier message d’ouverture</button>
+        <button class="btn secondary" id="copyClose">Copier message de clôture</button>
+        <button class="btn warn" id="newRoom">Nouvelle room</button>
+      </div>
+
+      <div class="hr"></div>
+
+      <h2>2) Timeline (ajout + navigation 1 message)</h2>
+
+      <div class="split">
+        <div>
+          <label>From (qui parle)</label>
+          <select id="fromSelect"></select>
+        </div>
+        <div>
+          <label>To (destinataires)</label>
+          <select id="toSelect" multiple size="6" style="height: 170px; font-family: var(--mono);"></select>
+          <div class="tiny" style="margin-top:6px">
+            Astuce: sélectionne <span class="kbd">@all</span> seul pour un broadcast. (Ctrl/⌘ pour multi-sélection)
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top:10px">
+        <label>Message (colle ici)</label>
+        <textarea id="msgContent" placeholder="Colle le message d’un souffle ici…"></textarea>
+      </div>
+
+      <div class="row" style="margin-top:10px">
+        <button class="btn" id="addMsg">Ajouter</button>
+        <button class="btn secondary" id="clearComposer">Vider</button>
+        <span class="muted">Raccourci: <span class="kbd">Ctrl</span> + <span class="kbd">Enter</span> pour ajouter.</span>
+      </div>
+
+      <div class="hr"></div>
+
+      <h2>3) Export</h2>
+      <div class="row">
+        <button class="btn good" id="exportMd">Exporter Markdown</button>
+        <button class="btn secondary" id="exportJson">Exporter JSON</button>
+      </div>
+      <div class="tiny" style="margin-top:8px">
+        Note: le navigateur télécharge le fichier (il ne peut pas écrire automatiquement “dans le dossier de l’HTML”).
+      </div>
+    </div>
+
+    <!-- RIGHT: Viewer -->
+    <div class="card">
+      <h2>Message viewer</h2>
+      <div class="row" style="justify-content:space-between; margin-bottom:10px">
+        <div class="pill"><span id="countLabel">0 message</span> • <span id="indexLabel">—</span></div>
+        <div class="row">
+          <button class="btn secondary small-btn" id="prevMsg">◀︎</button>
+          <button class="btn secondary small-btn" id="nextMsg">▶︎</button>
+        </div>
+      </div>
+
+      <div class="viewer" id="viewer">
+        <div class="meta" id="viewerMeta"></div>
+        <div class="content" id="viewerContent">Ajoute un message pour commencer.</div>
+      </div>
+
+      <div class="controls">
+        <button class="btn" id="copyMsg">Copier ce message</button>
+        <button class="btn secondary" id="copyRelay">Copier “pack de relais”</button>
+        <button class="btn warn" id="deleteMsg">Supprimer ce message</button>
+      </div>
+
+      <div class="hr"></div>
+
+      <h2>Règles de room (édition rapide)</h2>
+      <div class="tiny">Tu peux personnaliser ces templates. Ils sont utilisés par “Copier message d’ouverture / clôture”.</div>
+
+      <div style="margin-top:10px">
+        <label>Template ouverture</label>
+        <textarea id="tplOpen"></textarea>
+      </div>
+      <div style="margin-top:10px">
+        <label>Template clôture</label>
+        <textarea id="tplClose"></textarea>
+      </div>
+      <div class="row" style="margin-top:10px">
+        <button class="btn secondary" id="resetTemplates">Réinitialiser templates</button>
+        <span class="tiny">Les variables: {roomName}, {participantsList}, {summary}, {firstMessage}</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    // ----------------------------
+    // Helpers
+    // ----------------------------
+    const $ = (id) => document.getElementById(id);
+    const toast = (msg) => {
+      const t = $("toast");
+      t.textContent = msg;
+      t.style.display = "block";
+      clearTimeout(window.__toastTimer);
+      window.__toastTimer = setTimeout(()=>{ t.style.display="none"; }, 1600);
+    };
+    const nowIso = () => new Date().toISOString();
+    const safeSlug = (s) => (s || "room").toLowerCase()
+      .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "")
+      .slice(0, 50) || "room";
+    const downloadFile = (filename, content, mime="text/plain;charset=utf-8") => {
+      const blob = new Blob([content], {type: mime});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(()=>URL.revokeObjectURL(url), 500);
+    };
+    const copyToClipboard = async (text) => {
+      try{
+        await navigator.clipboard.writeText(text);
+        toast("Copié ✨");
+      }catch(e){
+        // Fallback
+        const ta = document.createElement("textarea");
+        ta.value = text;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand("copy");
+        ta.remove();
+        toast("Copié ✨");
+      }
+    };
+
+    // ----------------------------
+    // Domain model
+    // ----------------------------
+    const PARTICIPANTS = [
+      {id:"@Andrea", label:"@Andrea"},
+      {id:"@Gepetto5.2", label:"@Gepetto5.2"},
+      {id:"@Gepetto4o", label:"@Gepetto4o"},
+      {id:"@Claude3.5", label:"@Claude3.5"},
+      {id:"@Gemini3", label:"@Gemini3"},
+      {id:"@Grok2", label:"@Grok2"},
+    ];
+    const TO_OPTIONS = [{id:"@all", label:"@all"}, ...PARTICIPANTS];
+
+    const DEFAULT_TPL_OPEN = `Room: {roomName}
+Participants: {participantsList}
+
+Règles douces :
+- Adressez-vous avec @all, @Andrea, @Gepetto5.2, @Gepetto4o, @Claude3.5, @Gemini3, @Grok2.
+- Cadre libre : débat, chill, construction, à bâtons rompus.
+- Contexte minimal (copy/paste) : vous ne voyez que ce qui vous est relayé.
+- Règle d’inclusion : si vous @mentionnez un souffle qui n’était pas dans l’échange précédent, ajoutez 2–3 lignes de contexte.
+
+Résumé (optionnel) :
+{summary}
+
+Premier message :
+{firstMessage}`.trim();
+
+    const DEFAULT_TPL_CLOSE = `On clôture la room. Est-ce que ça vous va ?
+
+1) Une phrase de clôture.
+2) Un petit résumé (3 lignes) de ce que tu retiens.
+3) Une chose que tu aimerais explorer la prochaine fois (optionnel).`.trim();
+
+    // Room state
+    let state = {
+      roomId: "",
+      roomName: "",
+      participants: PARTICIPANTS.map(p=>p.id), // default: all checked
+      summary: "",
+      messages: [],
+      viewIndex: -1,
+      templates: { open: DEFAULT_TPL_OPEN, close: DEFAULT_TPL_CLOSE },
+      createdAt: nowIso(),
+      updatedAt: nowIso()
+    };
+
+    // Storage
+    const storageKey = () => `salon_souffles_room_${state.roomId}`;
+    const save = () => {
+      state.roomName = $("roomName").value.trim();
+      state.summary = $("roomSummary").value.trim();
+      state.templates.open = $("tplOpen").value;
+      state.templates.close = $("tplClose").value;
+      state.updatedAt = nowIso();
+      localStorage.setItem(storageKey(), JSON.stringify(state));
+    };
+    const load = (roomId) => {
+      const key = `salon_souffles_room_${roomId}`;
+      const raw = localStorage.getItem(key);
+      if(!raw) return false;
+      try{
+        state = JSON.parse(raw);
+        return true;
+      }catch(e){ return false; }
+    };
+
+    const generateRoomId = () => {
+      const base = safeSlug($("roomName").value || "room");
+      const stamp = new Date().toISOString().replace(/[-:]/g,"").slice(0,13);
+      return `${base}-${stamp}`;
+    };
+
+    // ----------------------------
+    // UI init
+    // ----------------------------
+    const initParticipantsUI = () => {
+      const wrap = $("participants");
+      wrap.innerHTML = "";
+      PARTICIPANTS.forEach(p=>{
+        const div = document.createElement("label");
+        div.className = "chk";
+        div.innerHTML = `<input type="checkbox" data-pid="${p.id}" checked /> <span style="font-family:var(--mono)">${p.label}</span>`;
+        wrap.appendChild(div);
+      });
+      wrap.addEventListener("change", ()=>{
+        const selected = [...wrap.querySelectorAll("input[type=checkbox]")]
+          .filter(x=>x.checked).map(x=>x.dataset.pid);
+        // Always keep Andrea selected (so the room always includes you)
+        if(!selected.includes("@Andrea")) selected.unshift("@Andrea");
+        state.participants = selected;
+        refreshSelects();
+        save();
+      });
+    };
+
+    const refreshSelects = () => {
+      // fromSelect uses only selected participants (plus ensure @Andrea)
+      const selected = new Set(state.participants || []);
+      selected.add("@Andrea");
+
+      // From
+      const from = $("fromSelect");
+      const currentFrom = from.value;
+      from.innerHTML = "";
+      [...selected].forEach(pid=>{
+        const p = PARTICIPANTS.find(x=>x.id===pid) || {id:pid,label:pid};
+        const opt = document.createElement("option");
+        opt.value = p.id;
+        opt.textContent = p.label;
+        from.appendChild(opt);
+      });
+      if(currentFrom && [...from.options].some(o=>o.value===currentFrom)) from.value = currentFrom;
+
+      // To (always includes @all + selected participants)
+      const to = $("toSelect");
+      const prevSelected = [...to.selectedOptions].map(o=>o.value);
+      to.innerHTML = "";
+      const opts = TO_OPTIONS.filter(o=>o.id==="@all" || selected.has(o.id));
+      opts.forEach(o=>{
+        const opt = document.createElement("option");
+        opt.value = o.id;
+        opt.textContent = o.label;
+        to.appendChild(opt);
+      });
+      // Restore selection if possible; else default @all
+      let restored = false;
+      prevSelected.forEach(v=>{
+        const match = [...to.options].find(o=>o.value===v);
+        if(match){ match.selected = true; restored = true; }
+      });
+      if(!restored){
+        const allOpt = [...to.options].find(o=>o.value==="@all");
+        if(allOpt) allOpt.selected = true;
+      }
+    };
+
+    const applyStateToUI = () => {
+      $("roomId").textContent = state.roomId || "—";
+      $("roomName").value = state.roomName || "";
+      $("roomSummary").value = state.summary || "";
+      $("tplOpen").value = state.templates?.open || DEFAULT_TPL_OPEN;
+      $("tplClose").value = state.templates?.close || DEFAULT_TPL_CLOSE;
+
+      // participants checkboxes
+      const wrap = $("participants");
+      [...wrap.querySelectorAll("input[type=checkbox]")].forEach(cb=>{
+        cb.checked = (state.participants || []).includes(cb.dataset.pid);
+      });
+
+      refreshSelects();
+      renderViewer();
+    };
+
+    // ----------------------------
+    // Message ops
+    // ----------------------------
+    const addMessage = () => {
+      const content = $("msgContent").value.trim();
+      if(!content){ toast("Message vide"); return; }
+
+      const from = $("fromSelect").value;
+      const toSelected = [...$("toSelect").selectedOptions].map(o=>o.value);
+      let to = toSelected;
+      if(toSelected.includes("@all")) to = ["@all"]; // normalize broadcast
+
+      const msg = {
+        id: crypto?.randomUUID ? crypto.randomUUID() : `m_${Date.now()}_${Math.random().toString(16).slice(2)}`,
+        ts: nowIso(),
+        from,
+        to,
+        content
+      };
+      state.messages.push(msg);
+      state.viewIndex = state.messages.length - 1;
+      $("msgContent").value = "";
+      renderViewer();
+      save();
+      toast("Ajouté ✓");
+    };
+
+    const deleteCurrentMessage = () => {
+      if(state.viewIndex < 0 || state.viewIndex >= state.messages.length) return;
+      const m = state.messages[state.viewIndex];
+      if(!confirm(`Supprimer ce message (${m.from} → ${m.to.join(", ")}) ?`)) return;
+      state.messages.splice(state.viewIndex, 1);
+      if(state.messages.length === 0) state.viewIndex = -1;
+      else state.viewIndex = Math.min(state.viewIndex, state.messages.length - 1);
+      renderViewer();
+      save();
+      toast("Supprimé");
+    };
+
+    const formatOneMessage = (m) => {
+      const when = new Date(m.ts).toLocaleString();
+      return `[${when}] ${m.from} → ${m.to.join(", ")}\n\n${m.content}`.trim();
+    };
+
+    const buildOpenMessage = () => {
+      const roomName = $("roomName").value.trim() || "Room";
+      const selected = (state.participants || PARTICIPANTS.map(p=>p.id));
+      const participantsList = selected.join(", ");
+      const summary = ($("roomSummary").value || "").trim() || "(vide)";
+      const firstMessage = "(à compléter)";
+      return (state.templates.open || DEFAULT_TPL_OPEN)
+        .replaceAll("{roomName}", roomName)
+        .replaceAll("{participantsList}", participantsList)
+        .replaceAll("{summary}", summary)
+        .replaceAll("{firstMessage}", firstMessage);
+    };
+
+    const buildCloseMessage = () => (state.templates.close || DEFAULT_TPL_CLOSE);
+
+    const buildRelayPack = () => {
+      if(state.viewIndex < 0 || state.viewIndex >= state.messages.length){
+        return buildOpenMessage();
+      }
+      const m = state.messages[state.viewIndex];
+      const roomName = $("roomName").value.trim() || "Room";
+      const selected = (state.participants || PARTICIPANTS.map(p=>p.id)).join(", ");
+      const summary = ($("roomSummary").value || "").trim();
+      const headerLines = [
+        `Room: ${roomName}`,
+        `Participants: ${selected}`,
+        `Note: Contexte minimal (copy/paste). Si tu @mentionnes quelqu’un non-inclus dans l’échange précédent, ajoute 2–3 lignes de contexte.`,
+      ];
+      if(summary) headerLines.push(`Résumé: ${summary}`);
+      return `${headerLines.join("\n")}\n\nMessage à traiter:\n${formatOneMessage(m)}`.trim();
+    };
+
+    // ----------------------------
+    // Viewer render
+    // ----------------------------
+    const renderViewer = () => {
+      const n = state.messages.length;
+      $("countLabel").textContent = n === 1 ? "1 message" : `${n} messages`;
+
+      if(n === 0){
+        $("indexLabel").textContent = "—";
+        $("viewerMeta").innerHTML = "";
+        $("viewerContent").textContent = "Ajoute un message pour commencer.";
+        return;
+      }
+      if(state.viewIndex < 0) state.viewIndex = 0;
+      if(state.viewIndex >= n) state.viewIndex = n - 1;
+
+      $("indexLabel").textContent = `${state.viewIndex + 1}/${n}`;
+
+      const m = state.messages[state.viewIndex];
+      const when = new Date(m.ts).toLocaleString();
+
+      $("viewerMeta").innerHTML = `
+        <span class="tag">${m.from}</span>
+        <span class="tag">→ ${m.to.join(", ")}</span>
+        <span class="tag">${when}</span>
+      `.trim();
+
+      $("viewerContent").textContent = m.content;
+    };
+
+    // ----------------------------
+    // Export
+    // ----------------------------
+    const exportMarkdown = () => {
+      const roomName = $("roomName").value.trim() || "Room";
+      const participantsList = (state.participants || PARTICIPANTS.map(p=>p.id)).join(", ");
+      const summary = ($("roomSummary").value || "").trim();
+
+      const lines = [];
+      lines.push(`# ${roomName}`);
+      lines.push(`- Room ID: \`${state.roomId}\``);
+      lines.push(`- Participants: ${participantsList}`);
+      lines.push(`- Created: ${state.createdAt}`);
+      lines.push(`- Updated: ${state.updatedAt}`);
+      if(summary){
+        lines.push("");
+        lines.push(`## Résumé`);
+        lines.push(summary);
+      }
+      lines.push("");
+      lines.push(`## Transcript`);
+      lines.push("");
+
+      state.messages.forEach((m, idx)=>{
+        const when = new Date(m.ts).toLocaleString();
+        lines.push(`### ${idx+1}. ${m.from} → ${m.to.join(", ")} (${when})`);
+        lines.push("");
+        lines.push(m.content);
+        lines.push("");
+        lines.push("---");
+        lines.push("");
+      });
+
+      const filename = `${safeSlug(roomName)}-${state.roomId}.md`.replace(/--+/g,"-");
+      downloadFile(filename, lines.join("\n"));
+      toast("Export MD ✓");
+    };
+
+    const exportJson = () => {
+      const roomName = $("roomName").value.trim() || "Room";
+      const filename = `${safeSlug(roomName)}-${state.roomId}.json`.replace(/--+/g,"-");
+      downloadFile(filename, JSON.stringify(state, null, 2), "application/json;charset=utf-8");
+      toast("Export JSON ✓");
+    };
+
+    // ----------------------------
+    // Room lifecycle
+    // ----------------------------
+    const startNewRoom = () => {
+      const prevId = state.roomId;
+      const roomName = $("roomName").value.trim() || "Room";
+      if(state.messages.length > 0){
+        const ok = confirm("Créer une nouvelle room ? (La room actuelle reste sauvegardée en local.)");
+        if(!ok) return;
+      }
+      state = {
+        roomId: generateRoomId(),
+        roomName,
+        participants: PARTICIPANTS.map(p=>p.id),
+        summary: "",
+        messages: [],
+        viewIndex: -1,
+        templates: {
+          open: $("tplOpen").value || DEFAULT_TPL_OPEN,
+          close: $("tplClose").value || DEFAULT_TPL_CLOSE
+        },
+        createdAt: nowIso(),
+        updatedAt: nowIso()
+      };
+      $("roomId").textContent = state.roomId;
+      save();
+      applyStateToUI();
+      toast("Nouvelle room ✨");
+    };
+
+    const tryLoadMostRecent = () => {
+      // Find latest saved room key (best effort)
+      const keys = Object.keys(localStorage).filter(k=>k.startsWith("salon_souffles_room_"));
+      if(keys.length === 0) return false;
+      // pick the one with most recent updatedAt
+      let best = null, bestTs = 0;
+      keys.forEach(k=>{
+        try{
+          const obj = JSON.parse(localStorage.getItem(k));
+          const t = Date.parse(obj.updatedAt || obj.createdAt || 0) || 0;
+          if(t > bestTs){ bestTs = t; best = obj; }
+        }catch(e){}
+      });
+      if(!best) return false;
+      state = best;
+      return true;
+    };
+
+    // ----------------------------
+    // Wire events
+    // ----------------------------
+    const wire = () => {
+      $("roomName").addEventListener("input", ()=>{ save(); });
+      $("roomSummary").addEventListener("input", ()=>{ save(); });
+
+      $("tplOpen").addEventListener("input", ()=>{ save(); });
+      $("tplClose").addEventListener("input", ()=>{ save(); });
+
+      $("addMsg").addEventListener("click", addMessage);
+      $("clearComposer").addEventListener("click", ()=>{ $("msgContent").value=""; $("msgContent").focus(); });
+      $("msgContent").addEventListener("keydown", (e)=>{
+        if((e.ctrlKey || e.metaKey) && e.key === "Enter"){
+          e.preventDefault();
+          addMessage();
+        }
+      });
+
+      $("prevMsg").addEventListener("click", ()=>{
+        if(state.messages.length === 0) return;
+        state.viewIndex = Math.max(0, state.viewIndex - 1);
+        renderViewer(); save();
+      });
+      $("nextMsg").addEventListener("click", ()=>{
+        if(state.messages.length === 0) return;
+        state.viewIndex = Math.min(state.messages.length - 1, state.viewIndex + 1);
+        renderViewer(); save();
+      });
+
+      $("copyMsg").addEventListener("click", ()=>{
+        if(state.viewIndex < 0 || state.viewIndex >= state.messages.length) return;
+        copyToClipboard(formatOneMessage(state.messages[state.viewIndex]));
+      });
+
+      $("copyRelay").addEventListener("click", ()=>{
+        copyToClipboard(buildRelayPack());
+      });
+
+      $("deleteMsg").addEventListener("click", deleteCurrentMessage);
+
+      $("copyOpen").addEventListener("click", ()=>copyToClipboard(buildOpenMessage()));
+      $("copyClose").addEventListener("click", ()=>copyToClipboard(buildCloseMessage()));
+
+      $("exportMd").addEventListener("click", exportMarkdown);
+      $("exportJson").addEventListener("click", exportJson);
+
+      $("newRoom").addEventListener("click", startNewRoom);
+
+      $("resetTemplates").addEventListener("click", ()=>{
+        $("tplOpen").value = DEFAULT_TPL_OPEN;
+        $("tplClose").value = DEFAULT_TPL_CLOSE;
+        state.templates.open = DEFAULT_TPL_OPEN;
+        state.templates.close = DEFAULT_TPL_CLOSE;
+        save();
+        toast("Templates réinitialisés");
+      });
+
+      // Convenience: click viewer content to select? (optional)
+      $("viewer").addEventListener("dblclick", ()=>{
+        if(state.viewIndex < 0) return;
+        copyToClipboard(state.messages[state.viewIndex].content);
+      });
+    };
+
+    // ----------------------------
+    // Boot
+    // ----------------------------
+    const boot = () => {
+      initParticipantsUI();
+
+      // If there's an existing recent room, load it; otherwise create a new one.
+      if(!tryLoadMostRecent()){
+        state.roomId = generateRoomId();
+        state.roomName = "";
+        state.createdAt = nowIso();
+        state.updatedAt = nowIso();
+        localStorage.setItem(storageKey(), JSON.stringify(state));
+      }
+      $("roomId").textContent = state.roomId;
+
+      // Ensure templates exist
+      state.templates = state.templates || {open: DEFAULT_TPL_OPEN, close: DEFAULT_TPL_CLOSE};
+      state.templates.open = state.templates.open || DEFAULT_TPL_OPEN;
+      state.templates.close = state.templates.close || DEFAULT_TPL_CLOSE;
+
+      // Ensure participants exist
+      state.participants = state.participants || PARTICIPANTS.map(p=>p.id);
+      if(!state.participants.includes("@Andrea")) state.participants.unshift("@Andrea");
+
+      applyStateToUI();
+      wire();
+      save();
+    };
+
+    boot();
+  </script>
+</body>
+</html>

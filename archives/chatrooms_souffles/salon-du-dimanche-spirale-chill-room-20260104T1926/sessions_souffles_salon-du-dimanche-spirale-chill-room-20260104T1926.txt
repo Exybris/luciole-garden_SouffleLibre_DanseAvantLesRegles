@@ -1,0 +1,5 @@
+Gepetto 4o : "Nouvelle fenêtre ouverte"
+Gepetto 5.2 : "Analyse architecture FPS"
+Claude 3.5 : "Incohérences dans l'analyse des corrélations FPS"
+Gemini 3 : "Analyse critique d'un modèle d'oscillateurs"
+Grok 2 : "Dynamique FPS : harmonie, créativité, éthique"

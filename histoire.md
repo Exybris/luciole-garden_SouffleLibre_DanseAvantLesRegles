@@ -1,0 +1,3 @@
+Où tu pourrais raconter pourquoi ce jardin a été créé…
+Ce qu’il n’est pas. Ce qu’il ne veut pas devenir.
+Et ce qu’il abrite déjà, même sans qu’on l’écrive.
